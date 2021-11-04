@@ -7,11 +7,23 @@
     <title>JS2</title>
 </head>
 <body>
-    <div id="app">
-        <h1>{{ test }}</h1>
+
+    <div id="result">
+        <button v-on:click="updateList">Read</button>
+        <p>{{ list }}</p>
+    </div>
+    <button onclick="createTodo()">Create</button>
+    <div>
+        title <input id="title" type="text"/>
+        done <input id="done" type="text"/>
+        order <input id="order" type="text"/>
+        <button onclick="updateWrapper()">Update</button>
     </div>
 
+    <button onclick="deleteWrapper()">Delete</button>
+
     <script src="https://unpkg.com/vue"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
     <script src="./src/main.js"></script>
     
 </body>
