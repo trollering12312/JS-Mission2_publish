@@ -1,5 +1,5 @@
 {
-  "name": "drap_drop",
+  "name": "vue_drag_drop",
   "version": "0.0.0",
   "scripts": {
     "dev": "vite",
