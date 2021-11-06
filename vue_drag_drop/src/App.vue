@@ -15,6 +15,7 @@ window.done_li = ref([])
 window.undone_li = ref([])
 
 async function reOrder(obj_list) {
+  $('body').loading({message: 'Reordering...'})
   //list 따라 order값 변경
 
   if (obj_list == null) {
@@ -38,9 +39,12 @@ async function reOrder(obj_list) {
       "todoIds": id_list,
     }
   })
+  $('body').loading('stop')
 }
 
 async function readTodo() {
+  $('body').loading({message: 'Reading...'})
+  
   const {
     data
   } = await axios({
@@ -61,15 +65,18 @@ async function readTodo() {
   });
 
   console.log("read");
+  $('body').loading('stop')
 }
 
 async function refreshList(){
+  $('body').loading({message: 'Refreshing...'})
   await readTodo();
   await reOrder(done_li);
   await reOrder(undone_li);
   await readTodo();
 
   console.log("refresh");
+  $('body').loading('stop')
 }
 
 export default{
@@ -89,8 +96,10 @@ export default{
       document.getElementById("page_title").innerHTML = username+"\'s place😎";
 
       await readTodo();
+
     },
     createTodo : async function(){
+      $('body').loading({message: 'Creating...'})
       let title;
       let order;
       //사용자 입력 받기
@@ -124,9 +133,11 @@ export default{
     await refreshList();
 
     console.log("create");
+    $('body').loading('stop')
 
     },
     deleteTodo: async function(id){
+      $('body').loading({message: 'Deleting...'})
       const {
         data
       } = await axios({
@@ -147,7 +158,7 @@ export default{
       await refreshList();
       
       console.log("delete");
-
+      $('body').loading('stop')
     },
     deleteAll : async function(){
 
@@ -160,6 +171,7 @@ export default{
       })
     },
     updateTodo : async function(item){
+      $('body').loading({message: 'Updating...'})
       //사용자 input 가져오기
       //$refs에서 가져옴
       const cur_title = this.$refs[item.id+'title'].innerHTML;
@@ -185,6 +197,7 @@ export default{
       
       console.log("update");
       await refreshList();
+      $('body').loading('stop')
     }
   },
   setup() {
@@ -204,6 +217,8 @@ export default{
       }
 
       const updateDone = async function (item) {
+        $('body').loading({message: 'Updating Done...'})
+        
         const {
           data
         } = await axios({
@@ -224,6 +239,7 @@ export default{
         await refreshList();
 
         console.log("update done");
+        $('body').loading('stop')
       }
 
       const startDrag = (event, item) => {
