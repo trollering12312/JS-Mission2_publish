@@ -23,7 +23,6 @@ async function reOrder(obj_list) {
 
   //obj 리스트 처리
   const id_list = await obj_list.map(obj => obj.id);
-  console.log(id_list);
 
   const {
     data
@@ -65,9 +64,9 @@ async function readTodo() {
 }
 
 async function refreshList(){
+  await readTodo();
   await reOrder(done_li);
   await reOrder(undone_li);
-
   await readTodo();
 
   console.log("refresh");
@@ -84,10 +83,10 @@ export default{
 
       //사용자이름 가져오기
       const name = document.getElementById("name").value;
-      console.log(name);
       username = name;
+      await (this.logged = true);
 
-      this.logged = true;
+      document.getElementById("page_title").innerHTML = username+"\'s place😎";
 
       await readTodo();
     },
@@ -149,6 +148,16 @@ export default{
       
       console.log("delete");
 
+    },
+    deleteAll : async function(){
+
+      console.log(done_li);
+      const id_list = await done_li.map(obj => obj.id);
+      console.log(id_list);
+
+      id_list.map(async id => {
+        await this.deleteTodo(id);
+      })
     },
     updateTodo : async function(item){
       //사용자 input 가져오기
@@ -213,7 +222,7 @@ export default{
         })
 
         await refreshList();
-        
+
         console.log("update done");
       }
 
@@ -245,30 +254,10 @@ export default{
 
 <template>
   <div v-if = logged>
-    <button v-on:click="readTodo">read</button>
-    <button v-on:click="createTodo">create</button>
-    <div 
-    class='drop-zone' 
-    @drop="onDrop($event, true)"
-    @dragenter.prevent
-    @dragover.prevent
-    >
-      <div 
-      v-for='item in getDone(true)' 
-      :key='item.id'
-      class='drag-el'
-      draggable="true"
-      @dragstart="startDrag($event, item)"
-      >
-      <h4><span :ref="item.id+'order'" contenteditable="true">{{ item.order }}</span>. &emsp; <span :ref="item.id+'title'" contenteditable="true">{{ item.title }}</span></h4>
-      <p>생성일: {{ item.createdAt }}</p>
-      <p>수정일: {{ item.updatedAt }}</p>
-      <p>done : {{ item.done }}</p>
-      <button v-on:click="deleteTodo(item.id)">삭제하기</button>
-      <button v-on:click="updateTodo(item)">수정하기</button>
-      </div>
-    </div>
+    <h2 id="page_title"></h2>
+    <button v-on:click="createTodo" class="btn btn-1">할 일 추가하기</button>
 
+    <h2>To Do</h2>
     <div 
     class='drop-zone'
     @drop="onDrop($event, false)"
@@ -282,10 +271,37 @@ export default{
       draggable="true"
       @dragstart="startDrag($event, item)"
       >
-      <h4><span :ref="item.id+'order'" contenteditable="true">{{ item.order }}</span>. &emsp; <span :ref="item.id+'title'" contenteditable="true">{{ item.title }}</span></h4>
+      <h4>
+        <span :ref="item.id+'order'" contenteditable="true">{{ item.order }}</span>.
+        <span :ref="item.id+'title'" contenteditable="true">{{ item.title }}</span>
+      </h4>
+      <p>최종수정일: {{ item.updatedAt }}</p>
+      <button v-on:click="deleteTodo(item.id)">삭제하기</button>
+      <button v-on:click="updateTodo(item)">수정하기</button>
+      </div>
+    </div>
+
+    <h2>Done</h2> <button v-on:click="deleteAll">완료된 할일 비우기</button>
+    <div 
+    class='drop-zone' 
+    @drop="onDrop($event, true)"
+    @dragenter.prevent
+    @dragover.prevent
+    >
+      <div 
+      v-for='item in getDone(true)' 
+      :key='item.id'
+      class='drag-el'
+      draggable="true"
+      @dragstart="startDrag($event, item)"
+      >
+      <h4>
+        <span :ref="item.id+'order'" contenteditable="true">{{ item.order }}</span>
+        . &emsp; 
+        <span :ref="item.id+'title'" contenteditable="true">{{ item.title }}</span>
+      </h4>
       <p>생성일: {{ item.createdAt }}</p>
       <p>수정일: {{ item.updatedAt }}</p>
-      <p>done : {{ item.done }}</p>
       <button v-on:click="deleteTodo(item.id)">삭제하기</button>
       <button v-on:click="updateTodo(item)">수정하기</button>
       </div>
@@ -313,14 +329,81 @@ export default{
   background-color: gainsboro;
   padding: 10px;
   min-height: 30px;
+  border-radius: 5px;
 }
 .drag-el {
-  background-color: aqua;
+  background-color: #9DF0FF;
   color: white;
   padding: 5px;
   margin-bottom: 10px;
 }
 .drag-el:nth-last-of-type(1){
   margin-bottom: 0;
+}
+
+.btn {
+  border: none;
+  font-family: 'Lato';
+  font-size: 30px;
+  color: inherit;
+  background: none;
+  cursor: pointer;
+  padding: 25px 80px;
+  display: inline-block;
+  margin: 15px 30px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 700;
+  outline: none;
+  position: relative;
+  -webkit-transition: all 0.3s;
+  -moz-transition: all 0.3s;
+  transition: all 0.3s;
+}
+
+.btn:after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  -webkit-transition: all 0.3s;
+  -moz-transition: all 0.3s;
+  transition: all 0.3s;
+}
+
+/* Pseudo elements for icons */
+.btn:before {
+  font-family: 'FontAwesome';
+  font-style: normal;
+  font-weight: normal;
+  font-variant: normal;
+  text-transform: none;
+  line-height: 1;
+  position: relative;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Button 1 */
+.btn-1 {
+  background: #3498db;
+  color: #fff;
+}
+
+.btn-1:hover {
+  background: #2980b9;
+}
+
+.btn-1:active {
+  background: #2980b9;
+  top: 2px;
+}
+
+.btn-1:before {
+  position: absolute;
+  height: 100%;
+  left: 0;
+  top: 0;
+  line-height: 3;
+  font-size: 140%;
+  width: 60px;
 }
 </style>
