@@ -5,17 +5,20 @@ const APIkey = 'FcKdtJs202110';
 let username = '';
 
 //drag and drop
-import {ref} from 'vue'
+import {
+  ref
+} from 'vue'
 
 //반응형 데이터를 위해 ref사용 - items를 참조하게됨
-window.items = ref([
-])
+window.items = ref([])
 
 window.done_li = ref([])
 window.undone_li = ref([])
 
 async function reOrder(obj_list) {
-  $('body').loading({message: 'Reordering...'})
+  $('body').loading({
+    message: 'Reordering...'
+  })
   //list 따라 order값 변경
 
   if (obj_list == null) {
@@ -43,8 +46,10 @@ async function reOrder(obj_list) {
 }
 
 async function readTodo() {
-  $('body').loading({message: 'Reading...'})
-  
+  $('body').loading({
+    message: 'Reading...'
+  })
+
   const {
     data
   } = await axios({
@@ -64,46 +69,48 @@ async function readTodo() {
     items.value.push(element);
   });
 
-  console.log("read");
   $('body').loading('stop')
 }
 
-async function refreshList(){
-  $('body').loading({message: 'Refreshing...'})
+async function refreshList() {
+  $('body').loading({
+    message: 'Refreshing...'
+  })
   await readTodo();
   await reOrder(done_li);
   await reOrder(undone_li);
   await readTodo();
 
-  console.log("refresh");
   $('body').loading('stop')
 }
 
-export default{
-  data () {
-    return{
-      logged : false
+export default {
+  data() {
+    return {
+      logged: false
     }
   },
   methods: {
-    login : async function(){
+    login: async function () {
 
       //사용자이름 가져오기
       const name = document.getElementById("name").value;
       username = name;
       await (this.logged = true);
 
-      document.getElementById("page_title").innerHTML = username+"\'s place😎";
+      document.getElementById("page_title").innerHTML = username + "\'s place😎";
 
       await readTodo();
 
     },
-    createTodo : async function(){
-      $('body').loading({message: 'Creating...'})
+    createTodo: async function () {
+      $('body').loading({
+        message: 'Creating...'
+      })
       let title;
       let order;
       //사용자 입력 받기
-      while(1){
+      while (1) {
         title = prompt("할 일을 입력해주세요:", "운동하기");
         order = Number(prompt("이 할 일의 순서를 입력해주세요(숫자만 가능)", "2"));
 
@@ -114,30 +121,33 @@ export default{
         }
       }
 
-      const { data } = await axios({
-      url: 'https://asia-northeast3-heropy-api.cloudfunctions.net/api/todos',
-      method: 'POST',
-      headers: {
-        'content-type': 'application/json',
-        'apikey': APIkey,
-        'username': username
-      },
-      data: {
-        "title": title,
-        "order" : order
-      }
-    })
+      const {
+        data
+      } = await axios({
+        url: 'https://asia-northeast3-heropy-api.cloudfunctions.net/api/todos',
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          'apikey': APIkey,
+          'username': username
+        },
+        data: {
+          "title": title,
+          "order": order
+        }
+      })
 
-    items.value.splice(order, 0, data);
-    
-    await refreshList();
+      items.value.splice(order, 0, data);
 
-    console.log("create");
-    $('body').loading('stop')
+      await refreshList();
+
+      $('body').loading('stop')
 
     },
-    deleteTodo: async function(id){
-      $('body').loading({message: 'Deleting...'})
+    deleteTodo: async function (id) {
+      $('body').loading({
+        message: 'Deleting...'
+      })
       const {
         data
       } = await axios({
@@ -151,31 +161,32 @@ export default{
       })
 
       //index 찾기
-      const index = items.value.map(function(e){return e.id;}).indexOf(id);
+      const index = items.value.map(function (e) {
+        return e.id;
+      }).indexOf(id);
       //삭제
-      items.value.splice(index,1);
+      items.value.splice(index, 1);
 
       await refreshList();
-      
-      console.log("delete");
+
       $('body').loading('stop')
     },
-    deleteAll : async function(){
+    deleteAll: async function () {
 
-      console.log(done_li);
       const id_list = await done_li.map(obj => obj.id);
-      console.log(id_list);
 
       id_list.map(async id => {
         await this.deleteTodo(id);
       })
     },
-    updateTodo : async function(item){
-      $('body').loading({message: 'Updating...'})
+    updateTodo: async function (item) {
+      $('body').loading({
+        message: 'Updating...'
+      })
       //사용자 input 가져오기
       //$refs에서 가져옴
-      const cur_title = this.$refs[item.id+'title'].innerHTML;
-      const cur_order = this.$refs[item.id+'order'].innerHTML;
+      const cur_title = this.$refs[item.id + 'title'].innerHTML;
+      const cur_order = this.$refs[item.id + 'order'].innerHTML;
 
       //update
       const {
@@ -194,78 +205,77 @@ export default{
           "order": cur_order
         }
       })
-      
-      console.log("update");
+
       await refreshList();
       $('body').loading('stop')
     }
   },
   setup() {
 
-      const getDone = (done) => {
+    const getDone = (done) => {
 
-        //완료여부 기준으로 분류
-        const res = items.value.filter((item) => item.done == done);
+      //완료여부 기준으로 분류
+      const res = items.value.filter((item) => item.done == done);
 
-        //order 기준으로 정렬
-        res.sort((a, b) => (a.order > b.order) ? 1 : -1)
+      //order 기준으로 정렬
+      res.sort((a, b) => (a.order > b.order) ? 1 : -1)
 
-        //reOrder를 위한 저장
-        done ? done_li = JSON.parse(JSON.stringify(res)) : undone_li = JSON.parse(JSON.stringify(res));
+      //reOrder를 위한 저장
+      done ? done_li = JSON.parse(JSON.stringify(res)) : undone_li = JSON.parse(JSON.stringify(res));
 
-        return res;
-      }
+      return res;
+    }
 
-      const updateDone = async function (item) {
-        $('body').loading({message: 'Updating Done...'})
-        
-        const {
-          data
-        } = await axios({
-          url: 'https://asia-northeast3-heropy-api.cloudfunctions.net/api/todos/' + item.id,
-          method: 'PUT',
-          headers: {
-            'content-type': 'application/json',
-            'apikey': APIkey,
-            'username': username,
-          },
-          data: {
-            "title": item.title,
-            "done": item.done,
-            "order": item.order
-          }
-        })
+    const updateDone = async function (item) {
+      $('body').loading({
+        message: 'Updating Done...'
+      })
 
-        await refreshList();
-
-        console.log("update done");
-        $('body').loading('stop')
-      }
-
-      const startDrag = (event, item) => {
-        event.dataTransfer.dropEffect = 'move'
-        event.dataTransfer.effectAllowed = 'move'
-        event.dataTransfer.setData('itemID', item.id)
-      }
-      const onDrop = async (event, done) => {
-        //onDrop시에도 getDone이 호출됨
-        const itemID = event.dataTransfer.getData('itemID')
-        const item = items.value.find((item) => item.id == itemID)
-        
-        if (item.done != done) {
-          item.done = done;
-          updateDone(item);
+      const {
+        data
+      } = await axios({
+        url: 'https://asia-northeast3-heropy-api.cloudfunctions.net/api/todos/' + item.id,
+        method: 'PUT',
+        headers: {
+          'content-type': 'application/json',
+          'apikey': APIkey,
+          'username': username,
+        },
+        data: {
+          "title": item.title,
+          "done": item.done,
+          "order": item.order
         }
-      }
+      })
 
-      return{
-          getDone,
-          onDrop,
-          startDrag
+      await refreshList();
+
+      $('body').loading('stop')
+    }
+
+    const startDrag = (event, item) => {
+      event.dataTransfer.dropEffect = 'move'
+      event.dataTransfer.effectAllowed = 'move'
+      event.dataTransfer.setData('itemID', item.id)
+    }
+    const onDrop = async (event, done) => {
+      //onDrop시에도 getDone이 호출됨
+      const itemID = event.dataTransfer.getData('itemID')
+      const item = items.value.find((item) => item.id == itemID)
+
+      if (item.done != done) {
+        item.done = done;
+        updateDone(item);
       }
+    }
+
+    return {
+      getDone,
+      onDrop,
+      startDrag
+    }
   }
 }
-
 </script>
 
 <template>
