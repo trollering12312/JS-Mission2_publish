@@ -1,7 +1,8 @@
 <script>
 //API
 const APIkey = 'FcKdtJs202110';
-const username = 'parkyoungchan';
+//const username = 'parkyoungchan';
+let username = '';
 
 //drag and drop
 import {ref} from 'vue'
@@ -10,30 +11,85 @@ import {ref} from 'vue'
 window.items = ref([
 ])
 
-window.done_li = []
-window.undone_li = []
+window.done_li = ref([])
+window.undone_li = ref([])
+
+async function reOrder(obj_list) {
+  //list 따라 order값 변경
+
+  if (obj_list == null) {
+    return
+  }
+
+  //obj 리스트 처리
+  const id_list = await obj_list.map(obj => obj.id);
+  console.log(id_list);
+
+  const {
+    data
+  } = await axios({
+    url: 'https://asia-northeast3-heropy-api.cloudfunctions.net/api/todos/reorder',
+    method: 'PUT',
+    headers: {
+      'content-type': 'application/json',
+      'apikey': APIkey,
+      'username': username
+    },
+    data: {
+      "todoIds": id_list,
+    }
+  })
+}
+
+async function readTodo() {
+  const {
+    data
+  } = await axios({
+    url: 'https://asia-northeast3-heropy-api.cloudfunctions.net/api/todos',
+    method: 'GET',
+    headers: {
+      'content-type': 'application/json',
+      'apikey': APIkey,
+      'username': username
+    }
+  })
+
+  //items 초기화
+  items.value = [];
+  //items에 추가
+  data.forEach(element => {
+    items.value.push(element);
+  });
+
+  console.log("read");
+}
+
+async function refreshList(){
+  await reOrder(done_li);
+  await reOrder(undone_li);
+
+  await readTodo();
+
+  console.log("refresh");
+}
 
 export default{
+  data () {
+    return{
+      logged : false
+    }
+  },
   methods: {
-    readTodo : async function(){
-      const {data} = await axios({
-        url: 'https://asia-northeast3-heropy-api.cloudfunctions.net/api/todos',
-        method: 'GET',
-        headers: {
-          'content-type': 'application/json',
-          'apikey': APIkey,
-          'username': username
-        }
-      })
+    login : async function(){
 
-      //items 초기화
-      items.value = [];
-      //items에 추가
-      data.forEach(element => {
-        items.value.push(element);
-      });
+      //사용자이름 가져오기
+      const name = document.getElementById("name").value;
+      console.log(name);
+      username = name;
 
-      console.log("read");
+      this.logged = true;
+
+      await readTodo();
     },
     createTodo : async function(){
       let title;
@@ -66,7 +122,7 @@ export default{
 
     items.value.splice(order, 0, data);
     
-    await this.refreshList();
+    await refreshList();
 
     console.log("create");
 
@@ -89,23 +145,22 @@ export default{
       //삭제
       items.value.splice(index,1);
 
-      await this.refreshList();
+      await refreshList();
       
       console.log("delete");
 
     },
-    updateTodo : async function(id, done){
+    updateTodo : async function(item){
       //사용자 input 가져오기
       //$refs에서 가져옴
-      const title = this.$refs[id+'title'].innerHTML;
-      const order = this.$refs[id+'order'].innerHTML;
-      console.log(title, order);
+      const cur_title = this.$refs[item.id+'title'].innerHTML;
+      const cur_order = this.$refs[item.id+'order'].innerHTML;
 
       //update
       const {
         data
       } = await axios({
-        url: 'https://asia-northeast3-heropy-api.cloudfunctions.net/api/todos/' + id,
+        url: 'https://asia-northeast3-heropy-api.cloudfunctions.net/api/todos/' + item.id,
         method: 'PUT',
         headers: {
           'content-type': 'application/json',
@@ -113,44 +168,14 @@ export default{
           'username': username,
         },
         data: {
-          "title": title,
-          "done": done,
-          "order": order
+          "title": cur_title,
+          "done": item.done,
+          "order": cur_order
         }
       })
       
       console.log("update");
-      await this.refreshList();
-    },
-    reOrder : async function(obj_list){
-      //list 따라 order값 변경
-
-      if(obj_list == null){
-        return
-      }
-      
-      //obj 리스트 처리
-      const id_list = await obj_list.map(obj => obj.id);
-      console.log(id_list);
-      
-      const { data } = await axios({
-      url: 'https://asia-northeast3-heropy-api.cloudfunctions.net/api/todos/reorder',
-      method: 'PUT',
-      headers: {
-        'content-type': 'application/json',
-        'apikey': APIkey,
-        'username': username
-      },
-      data: {
-        "todoIds": id_list,
-      }
-      })
-    },
-    refreshList: async function() {
-      //작업후 내역을 수정해줌
-      await this.reOrder(done_li);
-      await this.reOrder(undone_li);
-      this.readTodo();
+      await refreshList();
     }
   },
   setup() {
@@ -187,6 +212,8 @@ export default{
           }
         })
 
+        await refreshList();
+        
         console.log("update done");
       }
 
@@ -195,17 +222,15 @@ export default{
         event.dataTransfer.effectAllowed = 'move'
         event.dataTransfer.setData('itemID', item.id)
       }
-      const onDrop = (event, done) => {
+      const onDrop = async (event, done) => {
         //onDrop시에도 getDone이 호출됨
         const itemID = event.dataTransfer.getData('itemID')
         const item = items.value.find((item) => item.id == itemID)
         
-        if(item.done != done){
+        if (item.done != done) {
           item.done = done;
           updateDone(item);
         }
-
-        
       }
 
       return{
@@ -219,7 +244,7 @@ export default{
 </script>
 
 <template>
-  <div>
+  <div v-if = logged>
     <button v-on:click="readTodo">read</button>
     <button v-on:click="createTodo">create</button>
     <div 
@@ -240,7 +265,7 @@ export default{
       <p>수정일: {{ item.updatedAt }}</p>
       <p>done : {{ item.done }}</p>
       <button v-on:click="deleteTodo(item.id)">삭제하기</button>
-      <button v-on:click="updateTodo(item.id, item.done)">수정하기</button>
+      <button v-on:click="updateTodo(item)">수정하기</button>
       </div>
     </div>
 
@@ -262,10 +287,14 @@ export default{
       <p>수정일: {{ item.updatedAt }}</p>
       <p>done : {{ item.done }}</p>
       <button v-on:click="deleteTodo(item.id)">삭제하기</button>
-      <button v-on:click="updateTodo(item.id, item.done)">수정하기</button>
+      <button v-on:click="updateTodo(item)">수정하기</button>
       </div>
     </div>
 
+  </div>
+  <div v-else>
+    <input type="text" id="name" value="parkyoungchan">
+    <button type="button" v-on:click="login">로그인하기</button>
   </div>
 </template>
 
@@ -283,7 +312,7 @@ export default{
   margin: 50px auto;
   background-color: gainsboro;
   padding: 10px;
-  min-height: 10px;
+  min-height: 30px;
 }
 .drag-el {
   background-color: aqua;
